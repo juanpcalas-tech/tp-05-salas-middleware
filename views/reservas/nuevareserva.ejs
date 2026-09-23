@@ -10,35 +10,28 @@
         <% } %>
             <form action="/reservas" method="post" class="formulario">
                 <label for="estudiante">Estudiante</label>
-                <input id="estudiante" name="estudiante" value="<%= (typeof reserva !== 'undefined' && reserva.estudiante) ? reserva.estudiante: '' %>" required>
+                <input id="estudiante" name="estudiante" value="<%= valores.estudiante ?? '' %>" required>
                 <label for="email">Email</label>
-                <input id="email" name="email" value="<%= (typeof reserva !== 'undefined' && reserva.email) ? reserva.email: '' %>" required>
+                <input id="email" name="email" value="<%=  valores.email ?? '' %>" required>
                 <label for="personas">Cant. Personas</label>
                 <input id="personas" name="personas" type="number" min="1" max="6" step="1"
-                    value="<%= (typeof reserva !== 'undefined' && reserva.personas) ? reserva.personas : '' %>" required>
+                    value="<%= valores.personas ?? '' %>" required>
 
                 <label for="turno">Turno</label>
                 <select id="turno" name="turno" required>
-                    <option value="" disabled <%=(typeof reserva==='undefined' || !reserva.turno) ? 'selected' : '' %>
-                        >Seleccione un turno</option>
-                    <option value="Mañana" <%=(typeof reserva !=='undefined' && reserva.turno==='Mañana' ) ? 'selected'
-                        : '' %>>Mañana</option>
-                    <option value="Tarde" <%=(typeof reserva !=='undefined' && reserva.turno==='Tarde' ) ? 'selected'
-                        : '' %>>Tarde</option>
-                    <option value="Noche" <%=(typeof reserva !=='undefined' && reserva.turno==='Noche' ) ? 'selected'
-                        : '' %>>Noche</option>
+                    <option value="" disabled <%=!valores.turno ? 'selected' : '' %>>Seleccione un turno</option>
+                    <option value="Mañana" <%=valores.turno==='Mañana' ? 'selected' : '' %>>Mañana</option>
+                    <option value="Tarde" <%=valores.turno==='Tarde' ? 'selected' : '' %>>Tarde</option>
+                    <option value="Noche" <%=valores.turno==='Noche' ? 'selected' : '' %>>Noche</option>
                 </select>
 
                 <label for="sala">Sala</label>
                 <select id="sala" name="sala" required>
-                    <option value="" disabled <%=(typeof reserva==='undefined' || !reserva.sala) ? 'selected' : '' %>
-                        >Seleccione una sala</option>
-                    <option value="Sala Norte" <%=(typeof reserva !=='undefined' && reserva.sala==='Sala Norte' )
-                        ? 'selected' : '' %>>Sala Norte</option>
-                    <option value="Sala Sur" <%=(typeof reserva !=='undefined' && reserva.sala==='Sala Sur' )
-                        ? 'selected' : '' %>>Sala Sur</option>
-                    <option value="Sala Multimedia" <%=(typeof reserva !=='undefined' &&
-                        reserva.sala==='Sala Multimedia' ) ? 'selected' : '' %>>Sala Multimedia</option>
+                    <option value="" disabled <%=!valores.sala ? 'selected' : '' %>>Seleccione una sala</option>
+                    <option value="Sala Norte" <%=valores.sala==='Sala Norte' ? 'selected' : '' %>>Sala Norte</option>
+                    <option value="Sala Sur" <%=valores.sala==='Sala Sur' ? 'selected' : '' %>>Sala Sur</option>
+                    <option value="Sala Multimedia" <%=valores.sala==='Sala Multimedia' ? 'selected' : '' %>>Sala
+                        Multimedia</option>
                 </select>
 
                 <button type="submit">Guardar Reserva</button>

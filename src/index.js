@@ -1,9 +1,9 @@
 const path = require("node:path");
 const express = require("express");
 const morgan = require("morgan");
-const { leerJsonReservas } = require("./archivo");
+//const { leerJsonReservas } = require("./archivo");
 const expressLayouts = require("express-ejs-layouts");
-const rutasReservas = path.join(__dirname, "..", "datos", "reservasalas.json");
+//const rutasReservas = path.join(__dirname, "..", "datos", "reservasalas.json");
 
 let numeroDeSolicitud = 0;
 function identificarSolicitud(req, res, next) {
@@ -67,7 +67,47 @@ function crearReserva(req, res) {
 async function main() {
     const PORT = 3000;
     const app = express();
-    const reservas = await leerJsonReservas(rutasReservas);
+//    const reservas = await leerJsonReservas(rutasReservas);
+
+    const reservas =
+        [
+            {
+                "id": 1,
+                "estudiante": "Carlos Mendoa",
+                "email": "carlos.mendoza@universidad.edu",
+                "sala": "Sala Norte",
+                "fecha": "2026-09-23",
+                "turno": "Mañana",
+                "personas": 4
+            },
+            {
+                "id": 2,
+                "estudiante": "Ana María Silva",
+                "email": "ana.silva@universidad.edu",
+                "sala": "Sala Multimedia",
+                "fecha": "2026-09-23",
+                "turno": "Tarde",
+                "personas": 6
+            },
+            {
+                "id": 3,
+                "estudiante": "Mateo Rodríguez",
+                "email": "mateo.rod@universidad.edu",
+                "sala": "Sala Sur",
+                "fecha": "2026-09-24",
+                "turno": "Noche",
+                "personas": 2
+            },
+            {
+                "id": 4,
+                "estudiante": "Sofía Benítez",
+                "email": "sofia.b@universidad.edu",
+                "sala": "Sala Norte",
+                "fecha": "2026-09-25",
+                "turno": "Tarde",
+                "personas": 1
+            }
+        ]
 
     app.set("view engine", "ejs");
     app.set("views", path.join(__dirname, "..", "views"));
@@ -108,34 +148,36 @@ async function main() {
         });
     });
 
+
     reservasRouter.get("/:id", (req, res) => {
         const id = Number(req.params.id);
         const reserva = reservas.find((elemento) => elemento.id === id);
         if (!reserva) {
-            return res.status(404).render("no_encontrado", {
+            return res.status(404).render("no-encontrado", {
                 titulodetalle: "No encontrada",
                 mensaje: "No existe un Reserva con ese identificador.",
             });
         }
 
-        res.render("reservas/listareservas", {
+        res.render("reservas/detallereserva", {
             titulodetalle: reserva.estudiante,
             reserva,
         });
     });
 
+
     reservasRouter.post("/", validarDatosReserva, crearReserva);
     app.use("/reservas", reservasRouter);
 
 
-        
-        app.use((req, res) => {
-            res.status(404).render("no-encontrado", {
-                titulodetalle: "Página no encontrada",
-                mensaje: "La dirección solicitada no existe.",
-            });
+
+    app.use((req, res) => {
+        res.status(404).render("no-encontrado", {
+            titulodetalle: "Página no encontrada",
+            mensaje: "La dirección solicitada no existe.",
         });
-    
+    });
+
 
     app.listen(PORT, () => {
         console.log(`Servidor corriendo Correctamente en http://localhost:${PORT}`);
