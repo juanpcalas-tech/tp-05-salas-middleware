@@ -12,10 +12,11 @@
                 <label for="estudiante">Estudiante</label>
                 <input id="estudiante" name="estudiante" value="<%= valores.estudiante ?? '' %>" required>
                 <label for="email">Email</label>
-                <input id="email" name="email" value="<%=  valores.email ?? '' %>" required>
+                <input id="email" name="email" value="<%= valores.email ?? '' %>" required>
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" value="<%= valores.fecha ?? '' %>" required>
                 <label for="personas">Cant. Personas</label>
-                <input id="personas" name="personas" type="number" min="1" max="6" step="1"
-                    value="<%= valores.personas ?? '' %>" required>
+                <input id="personas" name="personas" type="number" min="1" max="6" step="1" value="<%= valores.personas ?? '' %>" required>
 
                 <label for="turno">Turno</label>
                 <select id="turno" name="turno" required>

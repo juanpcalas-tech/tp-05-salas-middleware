@@ -1,14 +1,12 @@
 const path = require("node:path");
 const express = require("express");
 const morgan = require("morgan");
-//const { leerJsonReservas } = require("./archivo");
 const expressLayouts = require("express-ejs-layouts");
-//const rutasReservas = path.join(__dirname, "..", "datos", "reservasalas.json");
 
 let numeroDeSolicitud = 0;
 function identificarSolicitud(req, res, next) {
     numeroDeSolicitud += 1;
-    res.locals.solicitudId = `SOL-${String(numeroDeSolicitud).padStart(4, "0")}`;
+    res.locals.solicitudId = `BIB-${String(numeroDeSolicitud).padStart(4, "0")}`;
     next();
 }
 
@@ -33,18 +31,26 @@ function validarDatosReserva(req, res, next) {
     const estudiante = String(req.body.estudiante ?? "").trim();
     const email = String(req.body.email ?? "").trim();
     const fecha = String(req.body.fecha ?? "").trim();
-    const personas = Number(req.body.personas?.trim());
+    const personas = Number(req.body.personas);
     const salasDisponibles = ["Sala Norte", "Sala Sur", "Sala Multimedia"];
     const turnosDisponibles = ["Mañana", "Tarde", "Noche"];
-    const DatosValidos = estudiante && email && fecha && turnosDisponibles.includes(req.body.turno) && salasDisponibles.includes(req.body.sala) && Number.isInteger(personas) && personas > 0 && personas <= 6;
+    const DatosValidos =
+        estudiante &&
+        email &&
+        fecha &&
+        turnosDisponibles.includes(req.body.turno) &&
+        salasDisponibles.includes(req.body.sala) &&
+        Number.isInteger(personas) &&
+        personas > 0 &&
+        personas <= 6;
     if (!DatosValidos) {
         return res.status(400).render("reservas/nuevareserva", {
             titulodetalle: "Nueva Reserva",
             error: "Datos inválidos. Por favor, complete todos los campos correctamente.",
-            reserva: req.body
+            valores: req.body
         })
     }
-    req.salavalidada = {
+    req.reservaValidada = {
         estudiante,
         email,
         fecha,
@@ -54,21 +60,12 @@ function validarDatosReserva(req, res, next) {
     };
     next();
 }
-function crearReserva(req, res) {
-    const ultimoId = reservas.reduce(
-        (mayorId, reserva) => Math.max(mayorId, reserva.id),
-        0,
-    );
-    reservas.push({ id: ultimoId + 1, ...req.reservaValidada });
-    res.redirect("/reservas");
-}
+
 
 
 async function main() {
     const PORT = 3000;
     const app = express();
-//    const reservas = await leerJsonReservas(rutasReservas);
-
     const reservas =
         [
             {
@@ -109,6 +106,15 @@ async function main() {
             }
         ]
 
+    function crearReserva(req, res) {
+        const ultimoId = reservas.reduce(
+            (mayorId, reserva) => Math.max(mayorId, reserva.id),
+            0,
+        );
+        reservas.push({ id: ultimoId + 1, ...req.reservaValidada });
+        res.redirect("/reservas");
+    }
+
     app.set("view engine", "ejs");
     app.set("views", path.join(__dirname, "..", "views"));
     app.set("layout", "layouts/main");
@@ -132,7 +138,6 @@ async function main() {
     const reservasRouter = express.Router();
     reservasRouter.use(prepararAreaReservas);
 
-
     reservasRouter.get("/", (req, res) => {
         res.render("reservas/listareservas", {
             titulodetalle: "Reservas Efectuadas",
@@ -148,13 +153,12 @@ async function main() {
         });
     });
 
-
     reservasRouter.get("/:id", (req, res) => {
         const id = Number(req.params.id);
         const reserva = reservas.find((elemento) => elemento.id === id);
         if (!reserva) {
             return res.status(404).render("no-encontrado", {
-                titulodetalle: "No encontrada",
+                titulodetalle: "Reserva No encontrada",
                 mensaje: "No existe un Reserva con ese identificador.",
             });
         }
@@ -169,8 +173,6 @@ async function main() {
     reservasRouter.post("/", validarDatosReserva, crearReserva);
     app.use("/reservas", reservasRouter);
 
-
-
     app.use((req, res) => {
         res.status(404).render("no-encontrado", {
             titulodetalle: "Página no encontrada",
@@ -178,9 +180,9 @@ async function main() {
         });
     });
 
-
     app.listen(PORT, () => {
         console.log(`Servidor corriendo Correctamente en http://localhost:${PORT}`);
     });
 };
+
 main(); 
