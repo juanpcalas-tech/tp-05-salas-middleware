@@ -28,39 +28,49 @@ function prepararAreaReservas(req, res, next) {
     next();
 }
 function validarDatosReserva(req, res, next) {
+
     const estudiante = String(req.body.estudiante ?? "").trim();
     const email = String(req.body.email ?? "").trim();
     const fecha = String(req.body.fecha ?? "").trim();
+    const turno = String(req.body.turno ?? "").trim();
+    const sala = String(req.body.sala ?? "").trim();
     const personas = Number(req.body.personas);
+
     const salasDisponibles = ["Sala Norte", "Sala Sur", "Sala Multimedia"];
     const turnosDisponibles = ["Mañana", "Tarde", "Noche"];
     const DatosValidos =
         estudiante &&
-        email &&
+        email.includes("@") &&
         fecha &&
-        turnosDisponibles.includes(req.body.turno) &&
-        salasDisponibles.includes(req.body.sala) &&
+        turnosDisponibles.includes(turno) &&
+        salasDisponibles.includes(sala) &&
         Number.isInteger(personas) &&
         personas > 0 &&
         personas <= 6;
     if (!DatosValidos) {
-        return res.status(400).render("reservas/nuevareserva", {
+        return res.status(400).render("reservas/nueva", {
             titulodetalle: "Nueva Reserva",
             error: "Datos inválidos. Por favor, complete todos los campos correctamente.",
-            valores: req.body
-        })
+            valores: {
+                estudiante,
+                email,
+                fecha,
+                turno,
+                sala,
+                personas: req.body.personas
+            }
+        });
     }
     req.reservaValidada = {
         estudiante,
         email,
         fecha,
-        turno: req.body.turno,
-        sala: req.body.sala,
+        turno,
+        sala,
         personas
     };
     next();
 }
-
 
 
 async function main() {
@@ -135,6 +145,15 @@ async function main() {
         res.json(reservas);
     });
 
+    app.get("/estado", (req, res) => {
+        res.json({
+            status: "Sistema: OPERATIVO",
+            solicitudesProcesadas: numeroDeSolicitud,
+            memoriaRegistros: reservas.length
+        });
+    });
+
+
     const reservasRouter = express.Router();
     reservasRouter.use(prepararAreaReservas);
 
@@ -145,13 +164,15 @@ async function main() {
         });
     });
 
-    reservasRouter.get("/nuevareserva", (req, res) => {
-        res.render("reservas/nuevareserva", {
+    reservasRouter.get("/nueva", (req, res) => {
+        res.render("reservas/nueva", {
             titulodetalle: "Nueva Reserva",
             error: null,
             valores: {},
         });
     });
+
+    reservasRouter.post("/", validarDatosReserva, crearReserva);
 
     reservasRouter.get("/:id", (req, res) => {
         const id = Number(req.params.id);
@@ -169,8 +190,6 @@ async function main() {
         });
     });
 
-
-    reservasRouter.post("/", validarDatosReserva, crearReserva);
     app.use("/reservas", reservasRouter);
 
     app.use((req, res) => {
