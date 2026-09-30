@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const expressLayouts = require("express-ejs-layouts");
 
 let numeroDeSolicitud = 0;
+
 function identificarSolicitud(req, res, next) {
     numeroDeSolicitud += 1;
     res.locals.solicitudId = `BIB-${String(numeroDeSolicitud).padStart(4, "0")}`;
@@ -24,11 +25,10 @@ function medirDuracion(req, res, next) {
 }
 
 function prepararAreaReservas(req, res, next) {
-    res.locals.seccion = "Reserva de Salas Estudio";
+    res.locals.seccion = "Reserva de Salas";
     next();
 }
 function validarDatosReserva(req, res, next) {
-
     const estudiante = String(req.body.estudiante ?? "").trim();
     const email = String(req.body.email ?? "").trim();
     const fecha = String(req.body.fecha ?? "").trim();
@@ -38,6 +38,15 @@ function validarDatosReserva(req, res, next) {
 
     const salasDisponibles = ["Sala Norte", "Sala Sur", "Sala Multimedia"];
     const turnosDisponibles = ["Mañana", "Tarde", "Noche"];
+
+    if (!email.includes("@")) {
+        return res.status(400).render("reservas/nueva", {
+            titulodetalle: "Nueva Reserva",
+            error: "El correo electrónico debe contener el carácter '@'.",
+            valores: { estudiante, email, fecha, turno, sala, personas: req.body.personas }
+        });
+    }
+
     const DatosValidos =
         estudiante &&
         email.includes("@") &&
@@ -139,7 +148,7 @@ async function main() {
     app.use(express.json());
 
     app.get("/", (req, res) => {
-        res.render("comenzar", { titulodetalle: "Reserva Salas Estudio" });
+        res.render("inicio", { titulodetalle: "Reserva para Salas" });
     });
     app.get("/api/reservas", (req, res) => {
         res.json(reservas);
@@ -147,9 +156,9 @@ async function main() {
 
     app.get("/estado", (req, res) => {
         res.json({
-            status: "Sistema: OPERATIVO",
-            solicitudesProcesadas: numeroDeSolicitud,
-            memoriaRegistros: reservas.length
+            status: "Servicio Activo",
+            SolicitudesProcesadas: numeroDeSolicitud,
+            totalReservas: reservas.length
         });
     });
 
@@ -158,7 +167,7 @@ async function main() {
     reservasRouter.use(prepararAreaReservas);
 
     reservasRouter.get("/", (req, res) => {
-        res.render("reservas/listareservas", {
+        res.render("reservas/lista", {
             titulodetalle: "Reservas Efectuadas",
             reservas,
         });
@@ -184,7 +193,7 @@ async function main() {
             });
         }
 
-        res.render("reservas/detallereserva", {
+        res.render("reservas/detalle", {
             titulodetalle: reserva.estudiante,
             reserva,
         });

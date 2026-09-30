@@ -2,21 +2,20 @@
 
 
 ## Descripción
-Este proyecto consiste en una aplicación web desarrollada en Node.js con Express para la gestión de "Reserva de Salas Estudio". Se agregan middlewares globales y de ruta para procesar de forma secuencial
+Este proyecto consiste en una aplicación web desarrollada en Node.js con Express + EJS para la gestión de "Reserva de Salas Estudio". Se agregan middlewares globales y de ruta para procesar de forma secuencial y persistencia temporal en memoria.
 
 
 ## Instalación
-1. Clonar este repositorio en tu máquina local:
+1. Clonar este repositorio en la máquina local:
    git clone + URL del proyecto
 2. Inicializar Proyecto   
     npm init -y
 3. Instala todas las dependencias requeridas:
-   npm install
+   npm install express ejs express-ejs-layouts morgan
+   
  
-
 ## Ejecución
-  Iniciar el servidor de manera estándar.
-  Se agrega linea "start": "node --watch src/index.js",  
+  Se agrega linea "start": "node --watch src/index.js",  en package.json
   Se ejecuta en una Nueva Terminal el comando "npm start"
 
 El servidor estará disponible en "http://localhost:3000".
@@ -26,9 +25,9 @@ El servidor estará disponible en "http://localhost:3000".
 La aplicación expone los siguientes endpoints y vistas:
 
     ### Vistas HTML de la Aplicación
-    GET / -> Renderiza la vista "comenzar" (pantalla de inicio).
+    GET / -> Renderiza la vista "inicio" (pantalla de inicio).
     ******** Rutas Globales
-        * `GET /` -> Renderiza la página de bienvenida (`comenzar.ejs`).
+        * `GET /` -> Renderiza la página de bienvenida (`inicio.ejs`).
         * `GET /estado` -> Devuelve un objeto JSON con el estado de salud del servidor y estadísticas de solicitudes.
         * `GET /api/reservas` -> API REST que retorna el listado completo de reservas en formato JSON.
 
@@ -41,23 +40,27 @@ La aplicación expone los siguientes endpoints y vistas:
 
 ## Pipeline de middleware
 
-    [Cliente] 
-        ──> identificarSolicitud ==> Asigna un identificador correlativo único (`BIB-XXXX`) a cada petición adjuntándolo a `res.locals`. 
-        ──> medirDuracion ==> Registra el tiempo exacto en nanosegundos (`process.hrtime.bigint()`) cuando entra la petición y calcula los milisegundos  transcurridos una vez que el cliente recibe la respuesta (`res.on("finish")`).
-        ──> Morgan ==> Registra en consola un log visual y rápido de los métodos HTTP solicitados.
-        ──> Express Parsers (URL/JSON)  ==> Analizan y parsean los cuerpos de los formularios tradicionales o peticiones asíncronas HTTP, llenando `req.body`.
-        ──> Router (prepararAreaReservas) ==> Middleware a nivel de Router que inyecta el nombre de la sección actual (`res.locals.seccion`) para uso dinámico de las vistas.
-        ──> Crear Reserva ==> Controlador de fin de flujo. Calcula el nuevo identificador autoincremental analizando el arreglo actual, inserta 
+    ** Orden mínimo de dependencias:
+
+    1- Morgan (tercero)
+    2- identificarSolicitud (personalizado, global)
+    3- medirDuracion (personalizado, global)
+    4- expressLayouts (tercero)
+    5- express.static (incorporado)
+    6- express.urlencoded (incorporado)
+    7- express.json (incorporado)
+    8- Rutas de aplicación
+    9- Router de reservas con middleware de área
+    10- Página 404
 
 
 ## Alcance de cada Función
-* `identificarSolicitud(req, res, next)`: Alcance global. Inicializa y propaga el ID de rastreo de auditoría.
-* `medirDuracion(req, res, next)`: Alcance global. Monitorea el rendimiento del servidor e imprime métricas en consola.
-* `prepararAreaReservas(req, res, next)`: Alcance local (`reservasRouter`). Configura variables contextuales de interfaz.
-* `validarDatosReserva(req, res, next)`: Alcance de ruta (`POST /reservas`). Sanitiza los datos de entrada, comprueba reglas de negocio y decide si interrumpe o continúa el flujo.
-* `crearReserva(req, res)`: Controlador final de la ruta `POST`. Calcula el ID autoincremental de forma segura y añade la reserva al arreglo.
-* `main()`: Función asíncrona principal. Encapsula el arranque del servidor, inicializa la base de datos temporal, configura middlewares globales, define enrutadores y activa la escucha en el puerto de red.
 
+        Global: Morgan, identificarSolicitud, medirDuracion, expressLayouts, static, parsers.
+
+        Router: prepararAreaReservas, validarReserva, crearReserva.
+
+        Ruta específica: lógica de cada endpoint (/estado, /reservas/:id, etc.).
 
 ## Validación
 El proceso de validación de "validarDatosReserva" comprueba estrictamente las siguientes condiciones:
@@ -67,7 +70,7 @@ El proceso de validación de "validarDatosReserva" comprueba estrictamente las s
     - Salas permitidas: Debe corresponder exclusivamente a ""Sala Norte"", ""Sala Sur"" o ""Sala Multimedia"".
     - Turnos permitidos: Debe corresponder exclusivamente a ""Mañana"", ""Tarde"" o ""Noche"".
 
-    -- Si la validación falla: Interrumpe el pipeline devolviendo un estado "400 Bad Request" y vuelve a renderizar la vista "reservas/nuevareserva" inyectando un mensaje de error explícito y persistiendo los valores enviados previamente.
+    -- Si la validación falla: Se Interrumpe ejecucion devolviendo un estado "400 Error" y vuelve a renderizar la vista "reservas/nueva" inyectando un mensaje de error explícito y persistiendo los valores enviados previamente.
 
 
 ## Pruebas manuales
@@ -81,7 +84,7 @@ Para constatar el funcionamiento en tiempo de ejecución:
 
     Los nuevos registros empujados mediante "POST /reservas" se guardan únicamente dentro del arreglo en memoria volátil. Al no haber reescritura hacia el archivo físico en la función "crearReserva", cualquier detención, reinicio o fallo del proceso del servidor descartará los registros nuevos, restaurando los datos por defecto la próxima vez que se ejecute la rutina "main()".
 
-***********************************************************************************************************************************
+*************************************************************************************************************************
 Respuestas.
 
 - diferencia entre middleware incorporado, de terceros y personalizado;
@@ -109,7 +112,7 @@ Respuestas.
 
 - resultado del montaje del router;
 
-    Todas las rutas definidas dentro de reservasRouter se vuelven relativas al camino (path) donde decidiste montarlo. Express realiza una concatenación invisible:
+    Todas las rutas definidas dentro de reservasRouter se vuelven relativas al camino (path) donde fue  montado. Express realiza una concatenación invisible (en este caso "reservasRouter"):
         El GET "/" del router se convierte en GET /reservas
         El GET "/nueva" del router se convierte en GET /reservas/nueva
         El POST "/" del router se convierte en POST /reservas
@@ -120,3 +123,31 @@ Respuestas.
     
 - motivo por el cual las altas desaparecen al reiniciar.
     Porque las crea en memoria y no las graba en el arreglo inicial.
+
+## POST válido
+
+POST /reservas
+ → morgan("dev")
+ → identificarSolicitud
+ → medirDuracion
+ → expressLayouts
+ → express.urlencoded
+ → reservasRouter
+   → prepararAreaReservas
+   → validarReserva
+   → crearReserva
+ → 302 /reservas
+ → finish (ID, estado, duración)
+
+
+## POST inválido
+ POST /reservas
+ → morgan("dev")
+ → identificarSolicitud
+ → medirDuracion
+ → expressLayouts
+ → express.urlencoded
+ → reservasRouter
+   → prepararAreaReservas
+   → validarReserva
+     ✖ termina aquí con 400 (mensaje de error, role="alert")
